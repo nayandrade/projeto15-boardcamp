@@ -142,7 +142,7 @@ export async function postRent(req, res) {
         INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee")
         VALUES ($1, $2, now(), $3, null, $4, null    )
         `, [rentRequest.customerId, rentRequest.gameId, rentRequest.daysRented, originalPrice]);
-        res.sendStatus(201)
+        return res.sendStatus(201)
     } catch (error) {
         console.error(error);
         res.sendStatus(500)        
@@ -152,7 +152,6 @@ export async function postRent(req, res) {
 export async function returnRent(req, res) {
     const { id } = req.params
     console.log(id)
-
     try {
         const verifyRental = await connection.query(`
         SELECT * 

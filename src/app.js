@@ -4,6 +4,7 @@ import cors from 'cors';
 import chalk from 'chalk';
 
 import rentalsRouter from './routes/rentalsRouter.js'
+import categoriesRouter from './routes/categoriesRouter.js'
 // import connection from './database/database.js';
 
 dotenv.config();
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use(rentalsRouter)
+app.use(categoriesRouter)
 
 app.listen(process.env.PORT, () => {
     console.log(chalk.bold.bgRed(`Server is listening on port ${process.env.PORT}`));
