@@ -3,112 +3,50 @@ import connection from '../database/database.js';
 export async function getRentals(req, res) {
     const customerId = req.query.customerId;
     const gameId = req.query.gameId;
-    console.log(customerId, gameId);
+    const defaultQuery = `
+    SELECT rentals.*, 
+    json_build_object(
+        'id',customers.id, 
+        'name',customers.name
+    ) AS customer,
+    json_build_object(
+        'id',games.id, 
+        'name',games.name, 
+        'categoryId',
+        games."categoryId", 
+        'categoryName',
+        categories.name
+    ) AS game	
+    FROM rentals
+    JOIN customers 
+    ON rentals."customerId"=customers.id
+    JOIN games 
+    ON games.id = rentals."gameId"
+    JOIN categories
+    ON categories.id = games."categoryId"
+    `
 
     try {
-        if(customerId) {
+        if(customerId && !gameId) {
             const { rows: rentals } = await connection.query(`
-            SELECT rentals.*, customers.name as "customerName", games.name as "gameName", games."categoryId", categories.name as "categoryName" 
-            FROM rentals
-            JOIN customers 
-            ON rentals."customerId"=customers.id
-            JOIN games 
-            ON games.id = rentals."gameId"
-            JOIN categories
-            ON categories.id = games."categoryId"
+            ${defaultQuery}
             WHERE "customerId"=${customerId}
             `);
-            const detailedRental = [];
-            for(let i = 0; i< rentals.length; i++) {
-                detailedRental.push({
-                    ...rentals[i],
-                    customer: {
-                        id: rentals[i].customerId,
-                        name: rentals[i].customerName
-                    },
-                    game: {
-                        id: rentals[i].gameId,
-                        name: rentals[i].gameName,
-                        categoryId: rentals[i].categoryId,
-                        categoryName: rentals[i].categoryName
-                    }
-                })
-                delete detailedRental[i].customerName;
-                delete detailedRental[i].gameName;
-                delete detailedRental[i].categoryName;
-                delete detailedRental[i].categoryId; 
-            }
-        return res.send(detailedRental)
+        return res.send(rentals)
         }
-        if(gameId) {
+        if(gameId && !customerId) {
             const { rows: rentals } = await connection.query(`
-            SELECT rentals.*, customers.name as "customerName", games.name as "gameName", games."categoryId", categories.name as "categoryName" 
-            FROM rentals
-            JOIN customers 
-            ON rentals."customerId"=customers.id
-            JOIN games 
-            ON games.id = rentals."gameId"
-            JOIN categories
-            ON categories.id = games."categoryId"
+            ${defaultQuery}
             WHERE rentals."gameId"=${gameId}            
             `);
-            console.log(rentals)
-            const detailedRental = [];
-            for(let i = 0; i< rentals.length; i++) {
-                detailedRental.push({
-                    ...rentals[i],
-                    customer: {
-                        id: rentals[i].customerId,
-                        name: rentals[i].customerName
-                    },
-                    game: {
-                        id: rentals[i].gameId,
-                        name: rentals[i].gameName,
-                        categoryId: rentals[i].categoryId,
-                        categoryName: rentals[i].categoryName
-                    }
-                })
-                delete detailedRental[i].customerName;
-                delete detailedRental[i].gameName;
-                delete detailedRental[i].categoryName;
-                delete detailedRental[i].categoryId; 
-            }
-        return res.send(detailedRental)
+        return res.send(rentals)
 
         } 
         if(!customerId && !gameId) {
             const { rows: rentals } = await connection.query(`
-            SELECT rentals.*, customers.name as "customerName", games.name as "gameName", games."categoryId", categories.name as "categoryName" 
-            FROM rentals
-            JOIN customers 
-            ON rentals."customerId"=customers.id
-            JOIN games 
-            ON games.id = rentals."gameId"
-            JOIN categories
-            ON categories.id = games."categoryId"            
+            ${defaultQuery}
             `);
-            console.log(rentals)
-            const detailedRental = [];
-            for(let i = 0; i< rentals.length; i++) {
-                detailedRental.push({
-                    ...rentals[i],
-                    customer: {
-                        id: rentals[i].customerId,
-                        name: rentals[i].customerName
-                    },
-                    game: {
-                        id: rentals[i].gameId,
-                        name: rentals[i].gameName,
-                        categoryId: rentals[i].categoryId,
-                        categoryName: rentals[i].categoryName
-                    }
-                })
-                delete detailedRental[i].customerName;
-                delete detailedRental[i].gameName;
-                delete detailedRental[i].categoryName;
-                delete detailedRental[i].categoryId; 
-            }
-        return res.send(detailedRental)
+        return res.send(rentals)
         }
         
     } catch (error) {
@@ -138,9 +76,10 @@ export async function postRent(req, res) {
         const gameRented = gamesSearch.rows[0];
 
         const originalPrice = gameRented.pricePerDay * rentRequest.daysRented;
+        console.log(typeof rentRequest.daysRented, originalPrice, typeof originalPrice)
         await connection.query(`
         INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee")
-        VALUES ($1, $2, now(), $3, null, $4, null    )
+        VALUES ($1, $2, now(), $3, null, $4, null )
         `, [rentRequest.customerId, rentRequest.gameId, rentRequest.daysRented, originalPrice]);
         return res.sendStatus(201)
     } catch (error) {
@@ -151,7 +90,6 @@ export async function postRent(req, res) {
 
 export async function returnRent(req, res) {
     const { id } = req.params
-    console.log(id)
     try {
         const verifyRental = await connection.query(`
         SELECT * 
@@ -172,7 +110,7 @@ export async function returnRent(req, res) {
         console.log(todayTime, returnTime, returnDelay, rental.daysRented)
         if(returnDelay > rental.daysRented) {
             delayFee = (returnDelay - rental.daysRented) * (rental.originalPrice / rental.daysRented);
-            console.log(delayFee)
+            
         }
         await connection.query(`
         UPDATE rentals
