@@ -1,6 +1,6 @@
 import postCategorySchema from '../schemas/postCategorySchema.js';
 
-export default async function validateCategoryMiddleware(req, res, next) {
+export default function validateCategoryMiddleware(req, res, next) {
     const { error } = postCategorySchema(req.body);
     if(error) {
         return res.status(400).send(error.details[0].message);

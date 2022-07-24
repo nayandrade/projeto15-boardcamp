@@ -27,6 +27,7 @@ export async function getGames(req, res) {
 
 export async function postGame(req, res) {
     try {
+        
         const { name, image, stockTotal, categoryId, pricePerDay } = req.body
         const { rows: game } = await connection.query(`
         INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay")
