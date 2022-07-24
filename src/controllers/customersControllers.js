@@ -1,11 +1,19 @@
 import connection from "../database/database.js";
 
 export async function getCustomers(req, res) {
+    const cpf = req.query.cpf;
     try {
-        const customers = await connection.query(`
+        if(cpf) {
+            const { rows: customers } = await connection.query(`
+            SELECT * FROM customers
+            WHERE cpf LIKE $1
+            `, [`${cpf}%`]);
+            return res.send(customers)
+        }
+        const { rows: customers } = await connection.query(`
         SELECT * FROM customers
         `);
-        return res.status(200).send(customers.rows);
+        return res.status(200).send(customers);
     } catch (error) {
         console.error(error);
         res.sendStatus(500);
@@ -15,11 +23,14 @@ export async function getCustomers(req, res) {
 export async function getCustomerById(req, res) {
     const { id } = req.params;
     try {
-        const customer = await connection.query(`
+        const { rows: customers } = await connection.query(`
         SELECT * FROM customers
         WHERE id = $1
         `, [id]);
-        return res.status(200).send(customer.rows[0]);
+        if(customers.length === 0) {
+            return res.sendStatus(404);
+        }
+        return res.status(200).send(customers);
     } catch (error) {
         console.error(error);
         res.sendStatus(500);
@@ -29,21 +40,19 @@ export async function getCustomerById(req, res) {
 export async function postCustomer(req, res) {
     const { name, phone, cpf, birthday } = req.body;
     try {
-        const checkCustomer = await connection.query(`
+        const { rows: checkCustomer } = await connection.query(`
         SELECT * FROM customers
-        WHERE name = $1
-        `, [name]);
-        const customerExists = checkCustomer.rows.find(customer => customer.name === name);
-        if (customerExists) {
+        WHERE cpf = $1
+        `, [cpf]);
+        if (checkCustomer.length !== 0) {
             return res.sendStatus(409);
         }
-        const newCustomer = await connection.query(`
+        await connection.query(`
         INSERT INTO customers (name, phone, cpf, birthday)
         VALUES ($1, $2, $3, $4)
         RETURNING *
         `, [name, phone, cpf, birthday]);
-        return res.status(201).send(newCustomer.rows[0]);
-        
+        return res.sendStatus(201);  
     } catch (error) {
         console.error(error);
         res.sendStatus(500);

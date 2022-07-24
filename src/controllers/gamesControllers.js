@@ -13,8 +13,9 @@ export async function getGames(req, res) {
             const { rows: games } = await connection.query(`
             ${defaultQuery}
             WHERE lower(games.name) LIKE $1
+            OR upper(games.name) LIKE $1
             OR games.name LIKE $1
-            `, [`%${name}%`]);
+            `, [`${name}%`]);
             return res.send(games)
         }
         const { rows: games } = await connection.query(defaultQuery)
@@ -27,7 +28,6 @@ export async function getGames(req, res) {
 
 export async function postGame(req, res) {
     try {
-        
         const { name, image, stockTotal, categoryId, pricePerDay } = req.body
         const { rows: game } = await connection.query(`
         INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay")
