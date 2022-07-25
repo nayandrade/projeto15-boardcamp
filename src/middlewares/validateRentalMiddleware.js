@@ -29,15 +29,24 @@ export async function validateRentalMiddleware(req, res, next) {
         SELECT * FROM games
         WHERE id = $1
         `, [gameId]);
-        if (gamesSearch.length === 0) {
-            return res.sendStatus(400);
-        }
-        const hasStock = gamesSearch.rows[0].stockTotal > 0;
 
-        if (!hasStock) {
-            return res.sendStatus(400);
+        if (gamesSearch.rows.length === 0) {
+            return res.status(400).send('jogo não encontrado');
         }
-        res.locals.gamesSearch = gamesSearch; 
+        const hasStock = await connection.query(`
+        SELECT * FROM rentals
+        JOIN games
+        ON rentals."gameId"=games.id
+        WHERE rentals."gameId" = $1
+        AND rentals."returnDate" IS NULL
+        `, [gameId]);
+
+        if (hasStock.rows.length >= gamesSearch.rows[0].stockTotal) {
+            return res.status(400).send('sem estoque');
+        }
+
+        res.locals.gamesSearch = gamesSearch;
+         
     } catch (error) {
        console.error(error);
        res.sendStatus(500); 

@@ -68,7 +68,6 @@ export async function postRent(req, res) {
         VALUES ($1, $2, now(), $3, null, $4, null )
         `, [rentRequest.customerId, rentRequest.gameId, rentRequest.daysRented, originalPrice]);
         
-        await updateStock(rentRequest.gameId, -1);
         return res.sendStatus(201);
     } catch (error) {
         console.error(error);
@@ -105,7 +104,6 @@ export async function returnRent(req, res) {
         SET "returnDate"=now(), "delayFee"=$1
         WHERE id = $2
         `,[delayFee, id]);
-        await updateStock(rental.gameId, +1);
         return res.sendStatus(200);
     } catch (error) {
         console.error(error);
@@ -138,12 +136,4 @@ export async function deleteRent(req, res) {
         console.error(error);
         res.sendStatus(500);
     }
-}
-
-async function updateStock(gameId, quantity) {
-    await connection.query(`
-    UPDATE games
-    SET "stockTotal" = "stockTotal" + $1
-    WHERE id = $2
-    `,[quantity, gameId]);
 }
