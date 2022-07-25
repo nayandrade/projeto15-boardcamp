@@ -57,30 +57,18 @@ export async function getRentals(req, res) {
 
 export async function postRent(req, res) {
     const rentRequest = req.body;
+    const gamesSearch = res.locals.gamesSearch;
     try {
-        const customerSearch = await connection.query(`
-        SELECT * FROM customers 
-        WHERE id = $1 
-        `, [rentRequest.customerId]);
-        if(customerSearch.rows.length === 0) {
-            return res.sendStatus(400)
-        }
-
-        const gamesSearch = await connection.query(`
-        SELECT * FROM games
-        WHERE id = $1
-        `, [rentRequest.gameId]);
-        if(gamesSearch.rows.length === 0) {
-            return res.sendStatus(400)
-        }
+        
         const gameRented = gamesSearch.rows[0];
-
         const originalPrice = gameRented.pricePerDay * rentRequest.daysRented;
-        console.log(typeof rentRequest.daysRented, originalPrice, typeof originalPrice)
+
         await connection.query(`
         INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee")
         VALUES ($1, $2, now(), $3, null, $4, null )
         `, [rentRequest.customerId, rentRequest.gameId, rentRequest.daysRented, originalPrice]);
+        
+        await updateStock(rentRequest.gameId, -1);
         return res.sendStatus(201)
     } catch (error) {
         console.error(error);
@@ -107,7 +95,7 @@ export async function returnRent(req, res) {
         const returnTime = new Date(rental.rentDate).getTime();
         const returnDelay = Math.ceil((todayTime - returnTime) / (1000 * 60 * 60 * 24));
         let delayFee = 0;
-        console.log(todayTime, returnTime, returnDelay, rental.daysRented)
+        
         if(returnDelay > rental.daysRented) {
             delayFee = (returnDelay - rental.daysRented) * (rental.originalPrice / rental.daysRented);
             
@@ -117,6 +105,7 @@ export async function returnRent(req, res) {
         SET "returnDate"=now(), "delayFee"=$1
         WHERE id = $2
         `,[delayFee, id]);
+        await updateStock(rental.gameId, +1);
         return res.sendStatus(200)
     } catch (error) {
         console.error(error);
@@ -149,4 +138,12 @@ export async function deleteRent(req, res) {
         console.error(error);
         res.sendStatus(500)
     }
+}
+
+async function updateStock(gameId, quantity) {
+    await connection.query(`
+    UPDATE games
+    SET "stockTotal" = "stockTotal" + $1
+    WHERE id = $2
+    `,[quantity, gameId]);
 }

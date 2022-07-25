@@ -30,7 +30,7 @@ export async function getCustomerById(req, res) {
         if(customers.length === 0) {
             return res.sendStatus(404);
         }
-        return res.status(200).send(customers);
+        return res.status(200).send(customers[0]);
     } catch (error) {
         console.error(error);
         res.sendStatus(500);
