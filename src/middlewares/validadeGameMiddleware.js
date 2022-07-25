@@ -1,7 +1,6 @@
 import connection from '../database/database.js';
 import postGamesSchema from '../schemas/postGamesSchema.js';
 
-
 export default async function validateGameMiddleware(req, res, next) {
     const  { error } = postGamesSchema(req.body);
     if(error) {
@@ -23,7 +22,7 @@ export default async function validateGameMiddleware(req, res, next) {
             return res.status(400).send('Game already exists');
         }
     } catch (error) {
-        console.error(error)
+        console.error(error);
         res.sendStatus(500);
     }
     next();

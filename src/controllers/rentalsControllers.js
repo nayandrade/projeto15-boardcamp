@@ -32,26 +32,26 @@ export async function getRentals(req, res) {
             ${defaultQuery}
             WHERE "customerId"=${customerId}
             `);
-        return res.send(rentals)
+        return res.send(rentals);
         }
         if(gameId && !customerId) {
             const { rows: rentals } = await connection.query(`
             ${defaultQuery}
             WHERE rentals."gameId"=${gameId}            
             `);
-        return res.send(rentals)
+        return res.send(rentals);
 
         } 
         if(!customerId && !gameId) {
             const { rows: rentals } = await connection.query(`
             ${defaultQuery}
             `);
-        return res.send(rentals)
+        return res.send(rentals);
         }
         
     } catch (error) {
-        console.log(error)
-        res.sendStatus(500)
+        console.error(error);
+        res.sendStatus(500);
     }
 }
 
@@ -69,15 +69,15 @@ export async function postRent(req, res) {
         `, [rentRequest.customerId, rentRequest.gameId, rentRequest.daysRented, originalPrice]);
         
         await updateStock(rentRequest.gameId, -1);
-        return res.sendStatus(201)
+        return res.sendStatus(201);
     } catch (error) {
         console.error(error);
-        res.sendStatus(500)        
+        res.sendStatus(500);    
     }
 }
 
 export async function returnRent(req, res) {
-    const { id } = req.params
+    const { id } = req.params;
     try {
         const verifyRental = await connection.query(`
         SELECT * 
@@ -85,11 +85,11 @@ export async function returnRent(req, res) {
         WHERE id = $1
         `,[id]);
         if(verifyRental.rows.length <= 0) {
-            return res.sendStatus(404)
+            return res.sendStatus(404);
         }
         const rental = verifyRental.rows[0];
         if(rental.returnDate) {
-            return res.sendStatus(400)
+            return res.sendStatus(400);
         }
         const todayTime = new Date().getTime();
         const returnTime = new Date(rental.rentDate).getTime();
@@ -106,10 +106,10 @@ export async function returnRent(req, res) {
         WHERE id = $2
         `,[delayFee, id]);
         await updateStock(rental.gameId, +1);
-        return res.sendStatus(200)
+        return res.sendStatus(200);
     } catch (error) {
         console.error(error);
-        res.sendStatus(500)
+        res.sendStatus(500);
     }
 }
 
@@ -122,11 +122,11 @@ export async function deleteRent(req, res) {
         WHERE id = $1
         `,[id]);
         if(verifyRental.rows.length <= 0) {
-            return res.sendStatus(404)
+            return res.sendStatus(404);
         }
         const rental = verifyRental.rows[0];
         if(!rental.returnDate) {
-            return res.sendStatus(400)
+            return res.sendStatus(400);
         }
         await connection.query(`
         DELETE 
@@ -136,7 +136,7 @@ export async function deleteRent(req, res) {
         
     } catch (error) {
         console.error(error);
-        res.sendStatus(500)
+        res.sendStatus(500);
     }
 }
 

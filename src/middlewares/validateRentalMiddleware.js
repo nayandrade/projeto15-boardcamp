@@ -13,7 +13,7 @@ export async function validateRentalCustomerMiddleware(req, res, next) {
         WHERE id = $1 
         `, [customerId]);
         if(customerSearch.rows.length === 0) {
-            return res.sendStatus(400)
+            return res.sendStatus(400);
         }
     } catch (error) {
         console.error(error);
@@ -33,7 +33,7 @@ export async function validateRentalMiddleware(req, res, next) {
             return res.sendStatus(400);
         }
         const hasStock = gamesSearch.rows[0].stockTotal > 0;
-        console.log(hasStock);
+
         if (!hasStock) {
             return res.sendStatus(400);
         }

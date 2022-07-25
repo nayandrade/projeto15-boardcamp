@@ -8,7 +8,7 @@ export async function getCustomers(req, res) {
             SELECT * FROM customers
             WHERE cpf LIKE $1
             `, [`${cpf}%`]);
-            return res.send(customers)
+            return res.send(customers);
         }
         const { rows: customers } = await connection.query(`
         SELECT * FROM customers
@@ -40,13 +40,6 @@ export async function getCustomerById(req, res) {
 export async function postCustomer(req, res) {
     const { name, phone, cpf, birthday } = req.body;
     try {
-        // const { rows: checkCustomer } = await connection.query(`
-        // SELECT * FROM customers
-        // WHERE cpf = $1
-        // `, [cpf]);
-        // if (checkCustomer.length !== 0) {
-        //     return res.sendStatus(409);
-        // }
         await connection.query(`
         INSERT INTO customers (name, phone, cpf, birthday)
         VALUES ($1, $2, $3, $4)
